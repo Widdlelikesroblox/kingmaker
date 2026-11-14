@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kingmaker-checkers"
+version = "1.0.0"
+description = "A checkers coach: set up your real board, move either side, get the strongest move."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+kingmaker = "kingmaker.gui:main"
+
+[tool.setuptools]
+packages = ["kingmaker"]
