@@ -1,0 +1,46 @@
+name: Build apps
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, lib: kingmaker.dll, sep: ";" }
+          - { os: macos-latest, lib: libkingmaker.dylib, sep: ":" }
+          - { os: ubuntu-latest, lib: libkingmaker.so, sep: ":" }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check the files are all here
+        run: |
+          echo "Files in the repository:"
+          ls -la
+          for f in run.py build_native.py native/kingmaker.c kingmaker/engine.py kingmaker/gui.py kingmaker/native.py tests/test_engine.py; do
+            if [ ! -f "$f" ]; then echo "MISSING FILE: $f (upload it to the repository, keeping its folder)"; exit 1; fi
+          done
+      - name: Build the C engine
+        run: python build_native.py
+      - name: Show the built engine
+        run: ls -la kingmaker
+      - name: Test
+        run: python -m unittest discover -s tests -v
+      - name: Build the app
+        run: |
+          python -m pip install pyinstaller
+          python -m PyInstaller --onefile --windowed --name "Kingmaker-${{ runner.os }}" --add-binary "kingmaker/${{ matrix.lib }}${{ matrix.sep }}kingmaker" run.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kingmaker-${{ runner.os }}
+          path: dist/*
